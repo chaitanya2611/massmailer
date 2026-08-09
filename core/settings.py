@@ -39,6 +39,16 @@ DEBUG = env_bool("DJANGO_DEBUG", default=True)
 
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 
+# Render sets RENDER_EXTERNAL_HOSTNAME automatically for every service — pick
+# it up so ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS work with zero manual config.
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+CSRF_TRUSTED_ORIGINS = [h for h in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if h]
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
 
 # Application definition
 
@@ -62,6 +72,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -148,6 +159,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 # Uploaded CSV/Excel files. Size-capped in the upload view — see datafiles/views.py.
 MEDIA_URL = "media/"
@@ -177,3 +193,12 @@ MICROSOFT_OAUTH_CLIENT_SECRET = os.environ.get("MICROSOFT_OAUTH_CLIENT_SECRET", 
 # Gmail free-tier daily send cap per connected account (used for UI throttling warnings).
 GMAIL_DAILY_SEND_LIMIT = int(os.environ.get("GMAIL_DAILY_SEND_LIMIT", 450))
 MS365_DAILY_SEND_LIMIT = int(os.environ.get("MS365_DAILY_SEND_LIMIT", 450))
+
+# --- Production hardening (Render terminates TLS and proxies plain HTTP to us) ---
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 7  # 1 week to start; raise once you're confident everything is served over HTTPS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True

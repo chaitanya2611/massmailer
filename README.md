@@ -33,6 +33,31 @@ Visit http://127.0.0.1:8000/ — sign up, upload a CSV/Excel file, draft a templ
    - `{your domain}/sending-accounts/callback/microsoft/`
 4. Restart the app. The "Connect Gmail" / "Connect Outlook" buttons under Sending accounts will now work.
 
+## Deploying to Render
+
+This repo includes `render.yaml` (a Render "Blueprint") and `build.sh`, so Render can stand up the web service and a managed Postgres database from the repo with no manual service configuration.
+
+1. Push this repo to GitHub (see below if you haven't yet).
+2. In the Render dashboard: **New +** → **Blueprint**, then connect and select this repo. Render will detect `render.yaml` automatically.
+3. Render will provision a free Postgres database (`massmailer-db`) and a free web service (`massmailer`), wiring `DATABASE_URL` and a generated `DJANGO_SECRET_KEY` automatically.
+4. Before the first deploy finishes successfully, fill in these env vars on the web service (Render dashboard → the service → Environment) — they're intentionally left blank in the blueprint since they're secrets:
+   - `FIELD_ENCRYPTION_KEY` — generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Required before any Gmail/Outlook account can be connected.
+   - `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` and/or `MICROSOFT_OAUTH_CLIENT_ID` / `MICROSOFT_OAUTH_CLIENT_SECRET` — see `sending/oauth.py` for where to get these. You can deploy without them; the "Connect Gmail/Outlook" buttons will just show a "not configured" message until they're set.
+5. Once deployed, register the OAuth redirect URIs with Google/Microsoft using your live Render URL:
+   - `https://{your-render-subdomain}.onrender.com/sending-accounts/callback/google/`
+   - `https://{your-render-subdomain}.onrender.com/sending-accounts/callback/microsoft/`
+6. The free Postgres plan expires after 30 days and the free web service spins down after inactivity (cold start on the next request) — fine for testing, upgrade the plans in Render when you're ready for real users.
+
+`ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` pick up Render's own hostname automatically (`RENDER_EXTERNAL_HOSTNAME`, set by Render on every service) — no extra config needed there.
+
+## Getting this onto GitHub
+
+If you haven't pushed yet:
+```bash
+git remote add origin https://github.com/<you>/<repo>.git   # already set if you're using the copy this session prepared
+git push -u origin main
+```
+
 ## Project layout
 
 - `accounts/` — signup/login/logout (Django's built-in auth)
