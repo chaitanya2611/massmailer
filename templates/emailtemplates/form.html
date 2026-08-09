@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}{% if instance %}Edit{% else %}New{% endif %} template — Massmailer{% endblock %}
+{% block content %}
+  <h1>{% if instance %}Edit template{% else %}New template{% endif %}</h1>
+  <p class="subtitle">Insert a variable by clicking a chip below while your cursor is in the Subject or Body field. Use the row selector to preview real data.</p>
+
+  <div class="card">
+    <label>Preview using data from</label>
+    <select id="data_file_select" class="stacked" onchange="refreshPreview()">
+      <option value="">— no data file selected —</option>
+      {% for f in data_files %}
+        <option value="{{ f.pk }}" {% if selected_file and f.pk == selected_file.pk %}selected{% endif %}>{{ f.original_filename }} ({{ f.row_count }} rows)</option>
+      {% endfor %}
+    </select>
+
+    {% if columns %}
+      <p class="help-text" style="margin-top:12px">Click to insert into the focused field:</p>
+      <div id="variable-chips">
+        {% for col in columns %}
+          <button type="button" class="variable-chip" onclick="insertVariable('{{ col|escapejs }}')">{{ '{{' }}{{ col }}{{ '}}' }}</button>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="help-text">No data files uploaded yet — <a href="{% url 'datafiles:upload' %}">upload one</a> to get variable suggestions and live previews.</p>
+    {% endif %}
+  </div>
+
+  <form method="post" class="stacked" id="template-form">
+    {% csrf_token %}
+    {% if selected_file %}<input type="hidden" name="data_file" value="{{ selected_file.pk }}">{% endif %}
+
+    <label for="id_name">{{ form.name.label }}</label>
+    {{ form.name }}
+
+    <label for="id_subject">{{ form.subject.label }}</label>
+    {{ form.subject }}
+
+    <label for="id_body">{{ form.body.label }}</label>
+    {{ form.body }}
+
+    <label style="font-weight:normal; display:flex; align-items:center; gap:6px; margin-top:12px;">
+      {{ form.is_html }} {{ form.is_html.label }}
+    </label>
+
+    <p style="margin-top:20px">
+      <button type="submit" class="btn">Save template</button>
+      <a href="{% url 'emailtemplates:list' %}" class="btn secondary">Cancel</a>
+    </p>
+  </form>
+
+  <div class="card">
+    <h2>Live preview</h2>
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+      <button type="button" class="btn secondary" onclick="stepRow(-1)">&larr; Previous row</button>
+      <button type="button" class="btn secondary" onclick="stepRow(1)">Next row &rarr;</button>
+    </div>
+    <div id="preview-pane" data-row-index="0">
+      <p class="empty-state">Preview will appear here.</p>
+    </div>
+  </div>
+
+  <script>
+    let lastFocusedFieldId = "id_body";
+    document.getElementById("id_subject").addEventListener("focus", () => lastFocusedFieldId = "id_subject");
+    document.getElementById("id_body").addEventListener("focus", () => lastFocusedFieldId = "id_body");
+
+    function insertVariable(colName) {
+      const field = document.getElementById(lastFocusedFieldId);
+      const token = "{{" + colName + "}}";
+      const start = field.selectionStart ?? field.value.length;
+      const end = field.selectionEnd ?? field.value.length;
+      field.value = field.value.slice(0, start) + token + field.value.slice(end);
+      field.focus();
+      field.selectionStart = field.selectionEnd = start + token.length;
+      refreshPreview();
+    }
+
+    function currentRowIndex() {
+      return parseInt(document.getElementById("preview-pane").dataset.rowIndex || "0", 10);
+    }
+
+    function refreshPreview() {
+      htmx.ajax("POST", "{% url 'emailtemplates:preview' %}", {
+        target: "#preview-pane",
+        swap: "outerHTML",
+        values: {
+          subject: document.getElementById("id_subject").value,
+          body: document.getElementById("id_body").value,
+          data_file: document.getElementById("data_file_select").value,
+          row_index: currentRowIndex(),
+        },
+      });
+    }
+
+    function stepRow(delta) {
+      const next = Math.max(0, currentRowIndex() + delta);
+      htmx.ajax("POST", "{% url 'emailtemplates:preview' %}", {
+        target: "#preview-pane",
+        swap: "outerHTML",
+        values: {
+          subject: document.getElementById("id_subject").value,
+          body: document.getElementById("id_body").value,
+          data_file: document.getElementById("data_file_select").value,
+          row_index: next,
+        },
+      });
+    }
+
+    let debounceTimer;
+    ["id_subject", "id_body"].forEach((id) => {
+      document.getElementById(id).addEventListener("keyup", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(refreshPreview, 400);
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", refreshPreview);
+  </script>
+{% endblock %}

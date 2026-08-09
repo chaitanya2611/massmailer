@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}New campaign — Massmailer{% endblock %}
+{% block content %}
+  <h1>New campaign</h1>
+  <p class="subtitle">Pick a template, the data file to merge from, which column holds the recipient's email, and which mailbox to send from.</p>
+
+  <div class="card">
+    <form method="post" class="stacked">
+      {% csrf_token %}
+      {% for field in form %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+        {% for error in field.errors %}<p class="help-text" style="color:var(--danger)">{{ error }}</p>{% endfor %}
+      {% endfor %}
+      <datalist id="email-column-options"></datalist>
+      <p style="margin-top:20px"><button type="submit" class="btn">Create campaign</button></p>
+    </form>
+  </div>
+
+  <script>
+    const dataFilesColumns = {{ data_files_columns_json|safe }};
+    const dataFileSelect = document.getElementById("id_data_file");
+    const emailColumnInput = document.getElementById("id_email_column");
+    const datalist = document.getElementById("email-column-options");
+
+    function syncColumns() {
+      const info = dataFilesColumns[dataFileSelect.value];
+      datalist.innerHTML = "";
+      if (!info) return;
+      info.columns.forEach((col) => {
+        const opt = document.createElement("option");
+        opt.value = col;
+        datalist.appendChild(opt);
+      });
+      if (info.email && !emailColumnInput.value) {
+        emailColumnInput.value = info.email;
+      }
+    }
+
+    if (dataFileSelect) {
+      dataFileSelect.addEventListener("change", syncColumns);
+      syncColumns();
+    }
+  </script>
+{% endblock %}

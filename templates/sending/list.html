@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Sending accounts — Massmailer{% endblock %}
+{% block content %}
+  <h1>Sending accounts</h1>
+  <p class="subtitle">Connect the mailbox you want campaigns to send from. Emails go out from your own address via Gmail/Outlook — not a shared server.</p>
+
+  <div class="card">
+    <a href="{% url 'sending:connect' 'google' %}" class="btn">Connect Gmail</a>
+    <a href="{% url 'sending:connect' 'microsoft' %}" class="btn secondary">Connect Outlook</a>
+    {% if not google_configured or not microsoft_configured %}
+      <p class="help-text" style="margin-top:12px">
+        {% if not google_configured %}Gmail OAuth isn't configured on this server yet (missing client id/secret in .env). {% endif %}
+        {% if not microsoft_configured %}Outlook OAuth isn't configured on this server yet (missing client id/secret in .env).{% endif %}
+        See <code>sending/oauth.py</code> for setup steps.
+      </p>
+    {% endif %}
+  </div>
+
+  {% if accounts %}
+    <table>
+      <thead><tr><th>Address</th><th>Provider</th><th>Status</th><th>Connected</th><th></th></tr></thead>
+      <tbody>
+        {% for a in accounts %}
+          <tr>
+            <td>{{ a.sender_email }}</td>
+            <td>{{ a.get_provider_display }}</td>
+            <td><span class="badge {{ a.status }}">{{ a.get_status_display }}</span></td>
+            <td>{{ a.connected_at|date:"M j, Y" }}</td>
+            <td>
+              <form method="post" action="{% url 'sending:disconnect' a.pk %}" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="link-button" style="color:var(--danger)">Disconnect</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No sending accounts connected yet.</p>
+  {% endif %}
+{% endblock %}

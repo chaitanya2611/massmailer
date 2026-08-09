@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load data_extras %}
+{% block title %}{{ data_file.original_filename }} — Massmailer{% endblock %}
+{% block content %}
+  <h1>{{ data_file.original_filename }}</h1>
+  <p class="subtitle">{{ data_file.row_count }} rows &middot; {{ data_file.columns|length }} columns &middot; uploaded {{ data_file.uploaded_at|date:"M j, Y g:i A" }}</p>
+
+  <div class="card">
+    <h2>Detected columns</h2>
+    {% for col in data_file.columns %}
+      <span class="variable-chip">{{ col }}</span>
+    {% endfor %}
+    {% if data_file.detected_email_column %}
+      <p class="help-text">Auto-detected email column: <strong>{{ data_file.detected_email_column }}</strong> (you can override this when creating a campaign).</p>
+    {% else %}
+      <p class="help-text">No email column auto-detected — you'll need to pick one manually when creating a campaign.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Preview (first 10 rows)</h2>
+    {% if preview_rows %}
+      <table>
+        <thead>
+          <tr>{% for col in data_file.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+          {% for row in preview_rows %}
+            <tr>{% for col in data_file.columns %}<td>{{ row|get_item:col }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Couldn't load a preview for this file.</p>
+    {% endif %}
+  </div>
+
+  <p><a href="{% url 'emailtemplates:create' %}?data_file={{ data_file.pk }}" class="btn">Draft a template using these variables</a></p>
+{% endblock %}

@@ -1,0 +1,19 @@
+<div id="preview-pane" data-row-index="{{ row_index }}">
+  {% if row_count %}
+    <p class="help-text">Row {{ row_index|add:1 }} of {{ row_count }}</p>
+  {% else %}
+    <p class="help-text">No data file selected — showing raw template text (variables not substituted).</p>
+  {% endif %}
+
+  {% if missing %}
+    <p class="help-text" style="color:var(--danger)">
+      Missing values for this row: {{ missing|join:", " }} — sending would skip or blank this recipient.
+    </p>
+  {% endif %}
+
+  <div class="card" style="background:#fff">
+    <strong>Subject:</strong> {{ rendered_subject }}
+    <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+    <div style="white-space:pre-wrap">{{ rendered_body }}</div>
+  </div>
+</div>

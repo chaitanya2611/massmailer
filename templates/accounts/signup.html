@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sign up — Massmailer{% endblock %}
+{% block content %}
+  <h1>Create your account</h1>
+  <p class="subtitle">Free to sign up. You'll connect your Gmail or Outlook account separately once you're in.</p>
+
+  <div class="card">
+    <form method="post" class="stacked">
+      {% csrf_token %}
+      {% for field in form %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+        {% for error in field.errors %}<p class="help-text" style="color:var(--danger)">{{ error }}</p>{% endfor %}
+      {% endfor %}
+      <p style="margin-top:20px"><button type="submit" class="btn">Sign up</button></p>
+    </form>
+  </div>
+
+  <p class="help-text">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+{% endblock %}

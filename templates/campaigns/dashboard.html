@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Massmailer{% endblock %}
+{% block content %}
+  <h1>Campaigns</h1>
+  <p><a href="{% url 'campaigns:create' %}" class="btn">New campaign</a></p>
+
+  {% if campaigns %}
+    <table>
+      <thead><tr><th>Name</th><th>Status</th><th>Template</th><th>Data file</th><th>Created</th></tr></thead>
+      <tbody>
+        {% for c in campaigns %}
+          <tr>
+            <td><a href="{% url 'campaigns:detail' c.pk %}">{{ c.name }}</a></td>
+            <td><span class="badge {{ c.status }}">{{ c.get_status_display }}</span></td>
+            <td>{{ c.template.name }}</td>
+            <td>{{ c.data_file.original_filename }}</td>
+            <td>{{ c.created_at|date:"M j, Y" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No campaigns yet. Upload a data file and draft a template to get started.</p>
+  {% endif %}
+{% endblock %}

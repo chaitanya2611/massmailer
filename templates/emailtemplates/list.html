@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Templates — Massmailer{% endblock %}
+{% block content %}
+  <h1>Email templates</h1>
+  <p><a href="{% url 'emailtemplates:create' %}" class="btn">New template</a></p>
+
+  {% if templates %}
+    <table>
+      <thead><tr><th>Name</th><th>Subject</th><th>Variables</th><th>Updated</th><th></th></tr></thead>
+      <tbody>
+        {% for t in templates %}
+          <tr>
+            <td>{{ t.name }}</td>
+            <td>{{ t.subject|truncatechars:40 }}</td>
+            <td>{{ t.variables_used|length }}</td>
+            <td>{{ t.updated_at|date:"M j, Y" }}</td>
+            <td><a href="{% url 'emailtemplates:edit' t.pk %}">Edit</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No templates yet.</p>
+  {% endif %}
+{% endblock %}

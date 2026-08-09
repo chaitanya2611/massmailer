@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Upload data file — Massmailer{% endblock %}
+{% block content %}
+  <h1>Upload a data file</h1>
+  <p class="subtitle">CSV or Excel (.xlsx). Column headers become the variables you can insert into a template. Max {{ MAX_UPLOAD_MB|default:"10" }}MB.</p>
+
+  <div class="card">
+    <form method="post" enctype="multipart/form-data" class="stacked">
+      {% csrf_token %}
+      {{ form.file.label_tag }}
+      {{ form.file }}
+      {% for error in form.file.errors %}<p class="help-text" style="color:var(--danger)">{{ error }}</p>{% endfor %}
+      <p style="margin-top:20px"><button type="submit" class="btn">Upload &amp; parse</button></p>
+    </form>
+  </div>
+{% endblock %}
