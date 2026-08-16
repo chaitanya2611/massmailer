@@ -17,24 +17,28 @@
           {% if counts.sent > 0 %}Resume sending{% else %}Send now{% endif %}
         </button>
       </form>
-      <p class="help-text">Sending runs synchronously and respects your mailbox's daily send limit — for large lists you may need to click "Resume sending" again after the limit resets.</p>
+      <p class="help-text">Small campaigns send immediately; larger ones are queued and sent in the background. Either way, sending respects your mailbox's daily send limit — for large lists you may need to click "Resume sending" again after the limit resets.</p>
     {% endif %}
   </div>
 
   <div class="card">
     <h2>Recipients {% if campaign.recipients.count > 200 %}(showing first 200){% endif %}</h2>
-    <table>
-      <thead><tr><th>Email</th><th>Status</th><th>Detail</th><th>Sent at</th></tr></thead>
-      <tbody>
-        {% for r in recipients %}
-          <tr>
-            <td>{{ r.resolved_email|default:"(none)" }}</td>
-            <td><span class="badge {{ r.status }}">{{ r.get_status_display }}</span></td>
-            <td>{{ r.error_message }}</td>
-            <td>{{ r.sent_at|date:"M j, g:i A"|default:"—" }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Email</th><th>Status</th><th>Detail</th><th>Sent at</th></tr></thead>
+        <tbody>
+          {% for r in recipients %}
+            <tr>
+              <td>{{ r.resolved_email|default:"(none)" }}</td>
+              <td><span class="badge {{ r.status }}">{{ r.get_status_display }}</span></td>
+              <td>{{ r.error_message }}</td>
+              <td>{{ r.sent_at|date:"M j, g:i A"|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <p class="help-text">Every email sent from this campaign automatically includes an unsubscribe link — recipients who click it are excluded from your future sends.</p>
 {% endblock %}

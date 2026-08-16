@@ -111,3 +111,65 @@ form.stacked textarea { min-height: 140px; font-family: ui-monospace, monospace;
 
 .empty-state { color: var(--muted); font-size: 14px; padding: 24px 0; }
 .help-text { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+/* Honeypot field for signup abuse prevention — visually hidden (not
+   type="hidden"; some bots skip real hidden inputs but still fill this). */
+.hp-field { position: absolute; left: -9999px; top: -9999px; height: 0; width: 0; overflow: hidden; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--bg-soft);
+  text-decoration: none;
+  color: inherit;
+}
+a.stat-card:hover { border-color: var(--accent); }
+.stat-number { font-size: 28px; font-weight: 700; line-height: 1.1; }
+.stat-label { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+.checklist { list-style: none; padding: 0; margin: 8px 0 0; }
+.checklist li { padding: 6px 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.checklist li.done { color: var(--muted); }
+.checklist .check-icon { color: var(--success); width: 16px; display: inline-block; }
+.checklist li:not(.done) .check-icon { color: var(--muted); }
+
+.table-scroll { width: 100%; overflow-x: auto; }
+
+.empty-state-card { text-align: center; padding: 32px 20px; }
+.empty-state-card .empty-state { padding: 0 0 16px; }
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .topbar nav { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .topbar nav a, .topbar nav .link-button { margin-left: 0; }
+
+  .container { padding: 16px; }
+
+  h1 { font-size: 20px; }
+
+  .card { padding: 16px; }
+
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-number { font-size: 22px; }
+
+  table { font-size: 13px; }
+  th, td { padding: 6px 8px; white-space: nowrap; }
+
+  .btn { display: block; text-align: center; width: 100%; margin-bottom: 8px; }
+  .btn + .btn { margin-left: 0; }
+}

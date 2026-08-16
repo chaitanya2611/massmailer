@@ -8,11 +8,18 @@
     <form method="post" class="stacked">
       {% csrf_token %}
       {% for field in form %}
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
-        {% for error in field.errors %}<p class="help-text" style="color:var(--danger)">{{ error }}</p>{% endfor %}
+        {% if field.name == "website" %}
+          <div class="hp-field" aria-hidden="true">{{ field }}</div>
+        {% else %}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+          {% for error in field.errors %}<p class="help-text" style="color:var(--danger)">{{ error }}</p>{% endfor %}
+        {% endif %}
       {% endfor %}
+      {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}<p class="help-text" style="color:var(--danger)">{{ error }}</p>{% endfor %}
+      {% endif %}
       <p style="margin-top:20px"><button type="submit" class="btn">Sign up</button></p>
     </form>
   </div>

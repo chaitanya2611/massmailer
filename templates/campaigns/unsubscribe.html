@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Unsubscribe — Massmailer{% endblock %}
+{% block content %}
+  <h1>Unsubscribe</h1>
+
+  <div class="card" style="max-width:480px">
+    {% if invalid %}
+      <p>This unsubscribe link isn't valid. If you followed a link from an email, try copying and pasting the full URL, or contact the sender directly.</p>
+    {% elif done %}
+      <p><strong>{{ email }}</strong> has been unsubscribed. You won't receive any further emails from this sender through Massmailer.</p>
+    {% elif already_done %}
+      <p><strong>{{ email }}</strong> is already unsubscribed from this sender's emails. No further action needed.</p>
+    {% else %}
+      <p>Stop receiving emails from this sender at <strong>{{ email }}</strong>?</p>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn danger">Unsubscribe me</button>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

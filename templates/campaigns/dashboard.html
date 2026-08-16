@@ -1,25 +1,76 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — Massmailer{% endblock %}
 {% block content %}
-  <h1>Campaigns</h1>
+  <h1>Dashboard</h1>
+  <p class="subtitle">Welcome back, {{ user.username }}.</p>
+
+  <div class="stat-grid">
+    <a class="stat-card" href="{% url 'datafiles:list' %}">
+      <span class="stat-number">{{ stats.data_files }}</span>
+      <span class="stat-label">Data files</span>
+    </a>
+    <a class="stat-card" href="{% url 'emailtemplates:list' %}">
+      <span class="stat-number">{{ stats.templates }}</span>
+      <span class="stat-label">Templates</span>
+    </a>
+    <a class="stat-card" href="{% url 'sending:list' %}">
+      <span class="stat-number">{{ stats.sending_accounts }}</span>
+      <span class="stat-label">Sending accounts</span>
+    </a>
+    <a class="stat-card" href="#campaigns">
+      <span class="stat-number">{{ stats.campaigns }}</span>
+      <span class="stat-label">Campaigns</span>
+    </a>
+    <div class="stat-card">
+      <span class="stat-number" style="color:var(--success)">{{ stats.sent_total }}</span>
+      <span class="stat-label">Emails sent</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number" style="color:{% if stats.failed_total %}var(--danger){% else %}var(--text){% endif %}">{{ stats.failed_total }}</span>
+      <span class="stat-label">Failed sends</span>
+    </div>
+  </div>
+
+  {% if not onboarding_complete %}
+    <div class="card">
+      <h2>Get set up</h2>
+      <ul class="checklist">
+        {% for step in onboarding_steps %}
+          <li class="{% if step.done %}done{% endif %}">
+            <span class="check-icon">{% if step.done %}✓{% else %}○{% endif %}</span>
+            {% if step.done %}
+              <span>{{ step.label }}</span>
+            {% else %}
+              <a href="{% url step.url %}">{{ step.label }}</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <h2 id="campaigns">Recent campaigns</h2>
   <p><a href="{% url 'campaigns:create' %}" class="btn">New campaign</a></p>
 
   {% if campaigns %}
-    <table>
-      <thead><tr><th>Name</th><th>Status</th><th>Template</th><th>Data file</th><th>Created</th></tr></thead>
-      <tbody>
-        {% for c in campaigns %}
-          <tr>
-            <td><a href="{% url 'campaigns:detail' c.pk %}">{{ c.name }}</a></td>
-            <td><span class="badge {{ c.status }}">{{ c.get_status_display }}</span></td>
-            <td>{{ c.template.name }}</td>
-            <td>{{ c.data_file.original_filename }}</td>
-            <td>{{ c.created_at|date:"M j, Y" }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Name</th><th>Status</th><th>Template</th><th>Data file</th><th>Created</th></tr></thead>
+        <tbody>
+          {% for c in campaigns %}
+            <tr>
+              <td><a href="{% url 'campaigns:detail' c.pk %}">{{ c.name }}</a></td>
+              <td><span class="badge {{ c.status }}">{{ c.get_status_display }}</span></td>
+              <td>{{ c.template.name }}</td>
+              <td>{{ c.data_file.original_filename }}</td>
+              <td>{{ c.created_at|date:"M j, Y" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if stats.campaigns > 8 %}<p class="help-text">Showing your 8 most recent campaigns.</p>{% endif %}
   {% else %}
-    <p class="empty-state">No campaigns yet. Upload a data file and draft a template to get started.</p>
+    <p class="empty-state">No campaigns yet. Once you've got a data file, a template, and a sending account connected, create your first campaign here.</p>
   {% endif %}
 {% endblock %}

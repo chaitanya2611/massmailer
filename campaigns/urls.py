@@ -9,4 +9,5 @@ urlpatterns = [
     path("campaigns/new/", views.create_campaign, name="create"),
     path("campaigns/<int:pk>/", views.campaign_detail, name="detail"),
     path("campaigns/<int:pk>/send/", views.send_campaign, name="send"),
+    path("unsubscribe/<str:token>/", views.unsubscribe_confirm, name="unsubscribe"),
 ]

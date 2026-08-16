@@ -17,26 +17,28 @@
   </div>
 
   {% if accounts %}
-    <table>
-      <thead><tr><th>Address</th><th>Provider</th><th>Status</th><th>Connected</th><th></th></tr></thead>
-      <tbody>
-        {% for a in accounts %}
-          <tr>
-            <td>{{ a.sender_email }}</td>
-            <td>{{ a.get_provider_display }}</td>
-            <td><span class="badge {{ a.status }}">{{ a.get_status_display }}</span></td>
-            <td>{{ a.connected_at|date:"M j, Y" }}</td>
-            <td>
-              <form method="post" action="{% url 'sending:disconnect' a.pk %}" class="inline-form">
-                {% csrf_token %}
-                <button type="submit" class="link-button" style="color:var(--danger)">Disconnect</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Address</th><th>Provider</th><th>Status</th><th>Connected</th><th></th></tr></thead>
+        <tbody>
+          {% for a in accounts %}
+            <tr>
+              <td>{{ a.sender_email }}</td>
+              <td>{{ a.get_provider_display }}</td>
+              <td><span class="badge {{ a.status }}">{{ a.get_status_display }}</span></td>
+              <td>{{ a.connected_at|date:"M j, Y" }}</td>
+              <td>
+                <form method="post" action="{% url 'sending:disconnect' a.pk %}" class="inline-form">
+                  {% csrf_token %}
+                  <button type="submit" class="link-button" style="color:var(--danger)">Disconnect</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p class="empty-state">No sending accounts connected yet.</p>
+    <p class="empty-state">No sending accounts connected yet. Connect Gmail or Outlook above — campaigns send from your own address, not a shared server.</p>
   {% endif %}
 {% endblock %}

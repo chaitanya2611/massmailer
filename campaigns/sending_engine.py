@@ -8,12 +8,16 @@ into a background worker (a management command polling for
 status=SENDING campaigns, run via cron or a worker dyno on Render/Railway)
 instead of calling it directly from the view.
 """
+from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 
 from datafiles.parsing import parse_tabular_file
 from emailtemplates.merge import missing_variables, render_merge
 
 from .models import Campaign, CampaignRecipient, UnsubscribeEntry
+from .tokens import make_unsubscribe_token
 
 
 def build_recipients(campaign: Campaign):
@@ -46,6 +50,25 @@ def build_recipients(campaign: Campaign):
         )
 
     CampaignRecipient.objects.bulk_create(recipients)
+
+
+def unsubscribe_url(user_id: int, email: str) -> str:
+    token = make_unsubscribe_token(user_id, email)
+    return f"{settings.SITE_BASE_URL}{reverse('campaigns:unsubscribe', args=[token])}"
+
+
+def append_unsubscribe_footer(body: str, is_html: bool, user_id: int, email: str) -> str:
+    """Append a footer with a working unsubscribe link, the way any bulk-email
+    tool has to when there's no provider-level suppression list underneath it."""
+    url = unsubscribe_url(user_id, email)
+    if is_html:
+        footer = (
+            '<p style="margin-top:24px;padding-top:12px;border-top:1px solid #ddd;'
+            'font-size:12px;color:#888">'
+            f'<a href="{escape(url)}" style="color:#888">Unsubscribe</a> from future emails.</p>'
+        )
+        return f"{body}\n{footer}"
+    return f"{body}\n\n---\nDon't want these emails? Unsubscribe: {url}"
 
 
 def send_campaign_now(campaign: Campaign):
@@ -83,8 +106,12 @@ def send_campaign_now(campaign: Campaign):
             recipient.save(update_fields=["status", "error_message"])
             continue
 
+        body_with_footer = append_unsubscribe_footer(
+            body, campaign.template.is_html, campaign.user_id, recipient.resolved_email
+        )
+
         try:
-            send_email(account, recipient.resolved_email, subject, body, is_html=campaign.template.is_html)
+            send_email(account, recipient.resolved_email, subject, body_with_footer, is_html=campaign.template.is_html)
         except SendError as exc:
             recipient.status = CampaignRecipient.Status.FAILED
             recipient.error_message = str(exc)

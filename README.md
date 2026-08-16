@@ -50,6 +50,20 @@ This repo includes `render.yaml` (a Render "Blueprint") and `build.sh`, so Rende
 
 `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` pick up Render's own hostname automatically (`RENDER_EXTERNAL_HOSTNAME`, set by Render on every service) — no extra config needed there.
 
+## Processing large campaigns in the background
+
+Campaigns with more than `SYNC_SEND_THRESHOLD` (default 25) pending recipients aren't sent inside the web request — that would risk a timeout. Clicking "Send now" on one of these just queues it (status becomes `SENDING`); a separate command finishes the job:
+
+```bash
+python manage.py send_pending_campaigns
+```
+
+Small campaigns still send instantly on click, no queue involved.
+
+To automate this instead of running it by hand:
+- **Render Cron Job** (needs a paid plan — the free tier doesn't support background workers or cron): add a service to `render.yaml` with `type: cron`, the same `buildCommand` as the web service, and `startCommand: "python manage.py send_pending_campaigns"`, on whatever schedule fits your volume (every few minutes is reasonable).
+- Any other scheduler (GitHub Actions, a VM's crontab, etc.) that can reach a `manage.py` shell against the same database.
+
 ## Getting this onto GitHub
 
 If you haven't pushed yet:
@@ -74,7 +88,14 @@ Not yet tested: a real Gmail/Outlook send (needs OAuth credentials only you can 
 
 ## Known v1 limitations (see architecture-plan.md milestones for the roadmap)
 
-- Sending is synchronous (runs inside the request) — fine for small campaigns/demos, but move to a background worker (a management command polling `status=SENDING` campaigns, run via cron on Render/Railway) before real volume.
-- No email verification / CAPTCHA on signup yet — add before opening this up publicly, since it's a bulk-email tool.
-- Unsubscribe entries have no UI yet (model + admin only) — add a public unsubscribe-link endpoint before real use.
+- No email verification on signup yet (honeypot + IP rate-limiting are in place — see "Compliance & abuse prevention" below — but there's no "confirm your address" step). Add before opening this up broadly.
+- The per-run daily-send-limit check in `campaigns/sending_engine.py` counts sends *within that run*, not across multiple runs/resumes in the same day — if a campaign is resumed several times in one day it can exceed the configured daily cap. Fine at v1 scale; track cumulative sends per account per day before relying on this for a provider-enforced limit.
 - Uploaded files are re-parsed from disk on each preview/campaign-build — fine at the current file-size cap (10MB), but consider caching parsed rows for larger files.
+- The background send worker (`send_pending_campaigns`) isn't safe to run as multiple concurrent workers against the same campaign (no row locking) — run it as a single scheduled job.
+- Rate limiting uses Django's default in-process cache, which resets on every deploy/restart and doesn't share state across multiple web dynos — fine for Render's free single-instance plan; move to a shared cache (Redis) before scaling horizontally.
+
+## Compliance & abuse prevention (milestone 6)
+
+- **Unsubscribe**: every sent email gets an automatic footer with a working, no-login-required unsubscribe link (`campaigns/tokens.py` + `campaigns/views.py::unsubscribe_confirm`). Recipients who click it are excluded from that sender's future campaigns at build time (`campaigns/sending_engine.py::build_recipients`).
+- **Signup abuse safeguards**: a honeypot field on the signup form (`accounts/forms.py`), plus IP-based rate limiting on signup and login (`core/ratelimit.py`, tunable via `SIGNUP_RATE_LIMIT_*`/`LOGIN_RATE_LIMIT_*` env vars). No CAPTCHA/external service required.
+- **High-volume account flagging**: `/admin/` surfaces each campaign's sending user's total sends in the last 24h and flags accounts over `SUSPICIOUS_DAILY_SEND_THRESHOLD` (default 2000) for manual review — it doesn't block sending, per the platform's "make compliance easy, but sends go out as the user" policy in `architecture-plan.md`.

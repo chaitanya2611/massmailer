@@ -194,6 +194,34 @@ MICROSOFT_OAUTH_CLIENT_SECRET = os.environ.get("MICROSOFT_OAUTH_CLIENT_SECRET", 
 GMAIL_DAILY_SEND_LIMIT = int(os.environ.get("GMAIL_DAILY_SEND_LIMIT", 450))
 MS365_DAILY_SEND_LIMIT = int(os.environ.get("MS365_DAILY_SEND_LIMIT", 450))
 
+# Absolute base URL used to build links that go out in emails (unsubscribe
+# links), where there's no in-flight request to build them from (e.g. the
+# background send worker). Falls back to Render's own hostname, then to
+# localhost for dev.
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "")
+if not SITE_BASE_URL:
+    if RENDER_EXTERNAL_HOSTNAME:
+        SITE_BASE_URL = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    else:
+        SITE_BASE_URL = "http://localhost:8000"
+
+# Campaigns with more pending recipients than this are queued for the
+# background worker (see campaigns/management/commands/send_pending_campaigns.py)
+# instead of being sent synchronously inside the request, to avoid request
+# timeouts on Render's free plan.
+SYNC_SEND_THRESHOLD = int(os.environ.get("SYNC_SEND_THRESHOLD", 25))
+
+# Signup/login abuse safeguards (see core/ratelimit.py). Values are
+# "N requests per window_seconds per client IP".
+SIGNUP_RATE_LIMIT = (int(os.environ.get("SIGNUP_RATE_LIMIT_COUNT", 8)), int(os.environ.get("SIGNUP_RATE_LIMIT_WINDOW", 3600)))
+LOGIN_RATE_LIMIT = (int(os.environ.get("LOGIN_RATE_LIMIT_COUNT", 15)), int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW", 600)))
+
+# A user sending more than this many emails in a rolling 24h window is
+# surfaced in /admin/ for manual review (see campaigns/admin.py). Doesn't
+# block sending — just flags accounts worth a look, per the platform-abuse
+# policy in architecture-plan.md section 6.
+SUSPICIOUS_DAILY_SEND_THRESHOLD = int(os.environ.get("SUSPICIOUS_DAILY_SEND_THRESHOLD", 2000))
+
 # --- Production hardening (Render terminates TLS and proxies plain HTTP to us) ---
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

@@ -5,21 +5,26 @@
   <p><a href="{% url 'emailtemplates:create' %}" class="btn">New template</a></p>
 
   {% if templates %}
-    <table>
-      <thead><tr><th>Name</th><th>Subject</th><th>Variables</th><th>Updated</th><th></th></tr></thead>
-      <tbody>
-        {% for t in templates %}
-          <tr>
-            <td>{{ t.name }}</td>
-            <td>{{ t.subject|truncatechars:40 }}</td>
-            <td>{{ t.variables_used|length }}</td>
-            <td>{{ t.updated_at|date:"M j, Y" }}</td>
-            <td><a href="{% url 'emailtemplates:edit' t.pk %}">Edit</a></td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Name</th><th>Subject</th><th>Variables</th><th>Updated</th><th></th></tr></thead>
+        <tbody>
+          {% for t in templates %}
+            <tr>
+              <td>{{ t.name }}</td>
+              <td>{{ t.subject|truncatechars:40 }}</td>
+              <td>{{ t.variables_used|length }}</td>
+              <td>{{ t.updated_at|date:"M j, Y" }}</td>
+              <td><a href="{% url 'emailtemplates:edit' t.pk %}">Edit</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p class="empty-state">No templates yet.</p>
+    <div class="card empty-state-card">
+      <p class="empty-state">No templates yet. Draft one with variables from your uploaded data, and preview it per-row before you send.</p>
+      <a href="{% url 'emailtemplates:create' %}" class="btn">Draft your first template</a>
+    </div>
   {% endif %}
 {% endblock %}

@@ -7,20 +7,25 @@
   <p><a href="{% url 'datafiles:upload' %}" class="btn">Upload a file</a></p>
 
   {% if files %}
-    <table>
-      <thead><tr><th>File</th><th>Rows</th><th>Columns</th><th>Uploaded</th></tr></thead>
-      <tbody>
-        {% for f in files %}
-          <tr>
-            <td><a href="{% url 'datafiles:detail' f.pk %}">{{ f.original_filename }}</a></td>
-            <td>{{ f.row_count }}</td>
-            <td>{{ f.columns|length }}</td>
-            <td>{{ f.uploaded_at|date:"M j, Y g:i A" }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>File</th><th>Rows</th><th>Columns</th><th>Uploaded</th></tr></thead>
+        <tbody>
+          {% for f in files %}
+            <tr>
+              <td><a href="{% url 'datafiles:detail' f.pk %}">{{ f.original_filename }}</a></td>
+              <td>{{ f.row_count }}</td>
+              <td>{{ f.columns|length }}</td>
+              <td>{{ f.uploaded_at|date:"M j, Y g:i A" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p class="empty-state">No files uploaded yet.</p>
+    <div class="card empty-state-card">
+      <p class="empty-state">No files uploaded yet. Upload a CSV or Excel file to unlock merge variables like <code>{% templatetag openvariable %}first_name{% templatetag closevariable %}</code> in your templates.</p>
+      <a href="{% url 'datafiles:upload' %}" class="btn">Upload your first file</a>
+    </div>
   {% endif %}
 {% endblock %}
